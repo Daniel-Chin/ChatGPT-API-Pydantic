@@ -1,7 +1,7 @@
 [project]
 name = "chatgpt-core-types"
 version = "0.1.0"
-description = "Add your description here"
+description = "Data structure for the basic objects defined in OpenAI's API, and how they convert between JSON and the python object."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
