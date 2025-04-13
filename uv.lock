@@ -12,7 +12,7 @@ wheels = [
 ]
 
 [[package]]
-name = "chatgpt-base-models"
+name = "chatgpt-api-pydantic"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

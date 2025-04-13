@@ -1,38 +1,83 @@
 import typing as tp
-from dataclasses import dataclass
-from functools import lru_cache
+from functools import lru_cache, wraps
 
-@dataclass(frozen=True)
-class Property:
+from pydantic import BaseModel, ConfigDict, Field
+
+PERFECT_CONFIG = ConfigDict(
+    frozen=True,
+    strict=True,
+    serialize_by_alias=True,
+)
+
+def autoCache(cls: tp.Type[BaseModel]):
+    assert cls.model_config.get('frozen', False), "autoCache can only be used with frozen models"
+    cls.model_validate_json = wraps(cls.model_validate_json)(
+        lru_cache(maxsize=None)(cls.model_validate_json), 
+    )
+    cls.model_dump_json = wraps(cls.model_dump_json)(
+        lru_cache(maxsize=None)(cls.model_dump_json),
+    )   # type: ignore[assignment]
+    # frozen models are hashable, but that's hard to statically infer
+    return cls
+
+@autoCache
+class FunctionTool(BaseModel):
+    model_config = PERFECT_CONFIG
+
+    class Parameters(BaseModel):
+        model_config = PERFECT_CONFIG
+
+        class Property(BaseModel):
+            model_config = PERFECT_CONFIG
+
+            type_: str = Field(alias='type')
+            description: str
+        
+        type_: str = Field(alias='type')
+        properties: tp.Dict[str, Property]
+        required: tp.List[str]
+        additionalProperties: bool
+    
+    type_: str = Field(alias='type')
     name: str
-    type_: str
     description: str
-    is_required: bool
+    parameters: Parameters
+    strict: bool | None
 
-@dataclass(frozen=True)
-class FunctionTool:
-    name: str
-    description: str
-    parameters: tp.Iterable[Property]
-    strict: bool | None = False
-
-    @lru_cache(maxsize=None)
-    def toPrimitive(self):
-        return {
-            "name": self.name,
-            "description": self.description,
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    p.name: {
-                        "type": p.type_,
-                        "description": p.description,
-                    } for p in self.parameters
-                },
-                "required": [
-                    p.name for p in self.parameters if p.is_required
-                ],
-                "additionalProperties": False, 
-            },
-            "strict": self.strict,
-        }
+    @classmethod
+    def new(
+        cls, 
+        name: str, 
+        description: str,
+        parameters: tp.Iterable[tp.Tuple[
+            str, # name
+            str, # type
+            str, # description
+            bool, # is_required
+        ]], 
+        strict: bool | None = False,
+    ):
+        '''
+        A more readable constructor
+        '''
+        properties = {}
+        required = []
+        for name, type_, description, is_required in parameters:
+            properties[name] = cls.Parameters.Property(
+                type=type_,
+                description=description,
+            )
+            if is_required:
+                required.append(name)
+        return cls(
+            type='function',
+            name=name,
+            description=description,
+            parameters=cls.Parameters(
+                type='object',
+                properties=properties,
+                required=required,
+                additionalProperties=False,
+            ),
+            strict=strict, 
+        )
