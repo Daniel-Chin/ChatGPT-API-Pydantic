@@ -1,2 +1,3 @@
-# ChatGPT Core Types
-Data structure for the basic objects defined in OpenAI's API, and how they convert between JSON and the python object.  
+# ChatGPT API Pydantic
+- Data structure (pydantic base models) for the basic objects defined in OpenAI's API.  
+- Parse from JSON. Dump to JSON.  

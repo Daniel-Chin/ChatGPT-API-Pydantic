@@ -1,7 +1,9 @@
 [project]
-name = "chatgpt-core-types"
+name = "chatgpt-api-pydantic"
 version = "0.1.0"
 description = "Data structure for the basic objects defined in OpenAI's API, and how they convert between JSON and the python object."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "pydantic>=2.11.3",
+]
