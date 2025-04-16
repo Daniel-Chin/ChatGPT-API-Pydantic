@@ -9,7 +9,8 @@ PERFECT_CONFIG = ConfigDict(
     serialize_by_alias=True,
 )
 
-def autoCache(cls: tp.Type[BaseModel]):
+SomeBaseModel = tp.TypeVar("SomeBaseModel", bound=tp.Type[BaseModel])
+def autoCache(cls: SomeBaseModel) -> SomeBaseModel:
     assert cls.model_config.get('frozen', False), "autoCache can only be used with frozen models"
     cls.model_validate_json = wraps(cls.model_validate_json)(
         lru_cache(maxsize=None)(cls.model_validate_json), 
@@ -81,3 +82,17 @@ class FunctionTool(BaseModel):
             ),
             strict=strict, 
         )
+
+@autoCache
+class FunctionToolCall(BaseModel):
+    model_config = PERFECT_CONFIG
+
+    class Function(BaseModel):
+        model_config = PERFECT_CONFIG
+
+        name: str
+        arguments: str
+
+    id_: str = Field(alias='id')
+    type_: str = Field(alias='type')
+    function: Function
